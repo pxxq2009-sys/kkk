@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المتجر الفاخر</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+    body { background: linear-gradient(135deg, #0f172a, #1e1b4b, #311042); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #fff; padding: 20px; }
+    .card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 30px; width: 100%; max-width: 480px; box-shadow: 0 30px 60px rgba(0,0,0,0.4); text-align: center; }
+    h2 { font-size: 26px; margin-bottom: 20px; color: #f1c40f; }
+    .input-group { margin-bottom: 15px; text-align: right; }
+    label { display: block; font-size: 14px; color: #cbd5e1; margin-bottom: 5px; }
+    input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(0, 0, 0, 0.2); color: #fff; font-size: 15px; outline: none; }
+    button { width: 100%; padding: 12px; border: none; border-radius: 10px; background: linear-gradient(135deg, #d4af37, #f1c40f); color: #000; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+    button:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(241, 196, 15, 0.3); }
+    .switch-btn { background: transparent; color: #cbd5e1; font-size: 13px; text-decoration: underline; margin-top: 10px; }
+    #message { margin-top: 15px; font-size: 14px; }
+    .error { color: #ff6b6b; } .success { color: #51cf66; }
+    
+    /* Dashboard & Store */
+    .dashboard { display: none; }
+    .user-info { background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; text-align: right; }
+    .id-tag { color: #cbd5e1; margin-top: 5px; font-family: monospace; font-size: 16px; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px; display: inline-block; }
+    .points-val { font-size: 36px; font-weight: bold; color: #f1c40f; margin-top: 5px; }
+    
+    .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+    .item-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; text-align: center; }
+    .item-price { color: #f1c40f; font-weight: bold; margin: 8px 0; }
+    .buy-btn { background: #27ae60; color: #fff; padding: 8px; font-size: 14px; }
+    .buy-btn:hover { background: #2ec771; }
+  </style>
+</head>
+<body>
+
+  <!-- كارت الدخول / التسجيل -->
+  <div class="card" id="authCard">
+    <h2 id="formTitle">تسجيل الدخول</h2>
+    
+    <div class="input-group">
+      <label>اسم المستخدم</label>
+      <input type="text" id="username" placeholder="أدخل اسم المستخدم">
+    </div>
+    
+    <div class="input-group">
+      <label>كلمة المرور</label>
+      <input type="password" id="password" placeholder="أدخل كلمة المرور">
+    </div>
+
+    <button id="submitBtn" onclick="handleSubmit()">دخول</button>
+    <button class="switch-btn" id="switchBtn" onclick="toggleMode()">ليس لديك حساب؟ إنشاء حساب جديد</button>
+    
+    <div id="message"></div>
+  </div>
+
+  <!-- لوحة المستخدم والمتجر -->
+  <div class="card dashboard" id="dashCard">
+    <h2>حسابي والمتجر</h2>
+    
+    <div class="user-info">
+      <div>اسم المستخدم: <strong id="userDisp"></strong></div>
+      <div>معرف الحساب (ID): <span class="id-tag" id="idDisp"></span></div>
+      <div style="margin-top: 10px;">النقاط المتوفرة: <div class="points-val" id="pointsDisp">0</div></div>
+    </div>
+
+    <h3>المتجر</h3>
+    <div class="store-grid">
+      <div class="item-card">
+        <h4>بطاقة VIP</h4>
+        <div class="item-price">50 نقطة</div>
+        <button class="buy-btn" onclick="buyItem('بطاقة VIP', 50)">شراء</button>
+      </div>
+      <div class="item-card">
+        <h4>سلاح ذهبي</h4>
+        <div class="item-price">120 نقطة</div>
+        <button class="buy-btn" onclick="buyItem('سلاح ذهبي', 120)">شراء</button>
+      </div>
+    </div>
+
+    <div id="storeMessage" style="margin-top: 15px;"></div>
+
+    <button onclick="logout()" style="background: rgba(255,255,255,0.1); color: #fff; margin-top: 20px;">تسجيل الخروج</button>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgHu3N1pDi3TZ7NF5qNRoDwxXvhyw5I5o3mNqjx6VcOnlPoEIR-HgN2gMrIzU5p8gI/exec"; 
+
+    let isLoginMode = true;
+    let currentUser = "";
+    let pollingInterval = null;
+
+    function toggleMode() {
+      isLoginMode = !isLoginMode;
+      document.getElementById('formTitle').innerText = isLoginMode ? "تسجيل الدخول" : "إنشاء حساب جديد";
+      document.getElementById('submitBtn').innerText = isLoginMode ? "دخول" : "تسجيل";
+      document.getElementById('switchBtn').innerText = isLoginMode ? "ليس لديك حساب؟ إنشاء حساب جديد" : "لديك حساب بالفعل؟ تسجيل الدخول";
+      document.getElementById('message').innerText = "";
+    }
+
+    async function handleSubmit() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const msgDiv = document.getElementById('message');
+
+      if (!username || !password) {
+        msgDiv.className = "error";
+        msgDiv.innerText = "يرجى تعبئة جميع الحقول!";
+        return;
+      }
+
+      msgDiv.className = "";
+      msgDiv.innerText = "جاري المعالجة...";
+
+      const action = isLoginMode ? "login" : "register";
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ action, username, password })
+        });
+
+        const res = await response.json();
+
+        if (res.success) {
+          if (isLoginMode) {
+            currentUser = res.username;
+            document.getElementById('authCard').style.display = "none";
+            document.getElementById('dashCard').style.display = "block";
+            document.getElementById('userDisp').innerText = res.username;
+            document.getElementById('idDisp').innerText = res.id;
+            document.getElementById('pointsDisp').innerText = res.points;
+
+            startPointsPolling();
+          } else {
+            msgDiv.className = "success";
+            msgDiv.innerText = `${res.message} الـ ID الخاص بك هو: ${res.id}`;
+            setTimeout(() => toggleMode(), 2500);
+          }
+        } else {
+          msgDiv.className = "error";
+          msgDiv.innerText = res.message;
+        }
+      } catch (err) {
+        msgDiv.className = "error";
+        msgDiv.innerText = "حدث خطأ بالاتصال!";
+      }
+    }
+
+    // شراء منتج وخصم النقاط فوراً
+    async function buyItem(itemName, price) {
+      const storeMsg = document.getElementById('storeMessage');
+      storeMsg.className = "";
+      storeMsg.innerText = "جاري الشراء...";
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ action: "buy_item", username: currentUser, price: price })
+        });
+        const res = await response.json();
+
+        if (res.success) {
+          storeMsg.className = "success";
+          storeMsg.innerText = `تم شراء ${itemName} بنجاح!`;
+          document.getElementById('pointsDisp').innerText = res.newPoints;
+        } else {
+          storeMsg.className = "error";
+          storeMsg.innerText = res.message;
+        }
+      } catch (err) {
+        storeMsg.className = "error";
+        storeMsg.innerText = "فشلت العملية!";
+      }
+    }
+
+    function startPointsPolling() {
+      if (pollingInterval) clearInterval(pollingInterval);
+      pollingInterval = setInterval(async () => {
+        if (!currentUser) return;
+        try {
+          const response = await fetch(SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({ action: "get_points", username: currentUser })
+          });
+          const res = await response.json();
+          if (res.success) {
+            document.getElementById('pointsDisp').innerText = res.points;
+          }
+        } catch (err) {}
+      }, 3000);
+    }
+
+    function logout() {
+      if (pollingInterval) clearInterval(pollingInterval);
+      currentUser = "";
+      document.getElementById('dashCard').style.display = "none";
+      document.getElementById('authCard').style.display = "block";
+    }
+  </script>
+</body>
+</html>
