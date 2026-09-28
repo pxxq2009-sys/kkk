@@ -1,330 +1,158 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-<meta name="theme-color" content="#000000" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#000">
 <title>AR SnapCam</title>
 
-<!-- DeepAR Web SDK -->
-<script src="https://cdn.jsdelivr.net/npm/deepar/js/deepar.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/deepar@5.6.22/js/deepar.js"></script>
 
 <style>
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{
-    margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
-    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif
-  }
-  body{position:fixed;inset:0}
-  #app{position:fixed;inset:0;background:#000}
-  #deepar-div{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#000}
-  #deepar-div canvas{width:100%!important;height:100%!important;object-fit:cover}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+#app{position:fixed;inset:0;background:#000}
+#deepar-div{position:absolute;inset:0;width:100%;height:100%;background:#000}
+#deepar-div canvas{width:100%!important;height:100%!important;object-fit:cover}
 
-  .top{
-    position:absolute;z-index:20;
-    top:calc(env(safe-area-inset-top) + 12px);
-    left:12px;right:12px;
-    display:flex;justify-content:space-between;direction:ltr
-  }
-  .iconbtn{
-    width:46px;height:46px;border:0;border-radius:50%;
-    background:rgba(0,0,0,.40);backdrop-filter:blur(12px);
-    color:#fff;display:grid;place-items:center
-  }
-  .iconbtn:active{transform:scale(.94)}
-  .icon{
-    width:23px;height:23px;stroke:currentColor;fill:none;
-    stroke-width:2;stroke-linecap:round;stroke-linejoin:round
-  }
+.top{position:absolute;z-index:20;top:calc(env(safe-area-inset-top) + 12px);left:12px;right:12px;display:flex;justify-content:space-between;direction:ltr}
+.btn{width:46px;height:46px;border:0;border-radius:50%;background:rgba(0,0,0,.42);backdrop-filter:blur(12px);color:#fff;display:grid;place-items:center}
+svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
-  .status{
-    position:absolute;z-index:30;
-    top:calc(env(safe-area-inset-top) + 70px);
-    left:50%;transform:translateX(-50%);
-    padding:8px 14px;border-radius:999px;
-    background:rgba(0,0,0,.58);backdrop-filter:blur(12px);
-    font-size:12px;font-weight:800;white-space:nowrap;
-    opacity:0;transition:.2s
-  }
-  .status.show{opacity:1}
+.bottom{position:absolute;z-index:20;left:0;right:0;bottom:0;padding-bottom:calc(env(safe-area-inset-bottom) + 14px);background:linear-gradient(transparent,rgba(0,0,0,.68))}
+.filters{direction:ltr;display:flex;gap:14px;overflow-x:auto;padding:18px calc(50vw - 38px) 14px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filter{flex:0 0 76px;width:76px;height:76px;border-radius:50%;border:3px solid rgba(255,255,255,.55);background:rgba(255,255,255,.13);display:grid;place-items:center;position:relative}
+.filter.active{transform:scale(1.12);border-color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.16)}
+.filter span{font-size:33px}
+.filter small{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:8px;font-weight:900;text-shadow:0 1px 4px #000}
 
-  .bottom{
-    position:absolute;z-index:20;left:0;right:0;bottom:0;
-    padding-bottom:calc(env(safe-area-inset-bottom) + 14px);
-    background:linear-gradient(transparent,rgba(0,0,0,.06),rgba(0,0,0,.68))
-  }
-  .filters{
-    direction:ltr;display:flex;gap:14px;overflow-x:auto;
-    padding:18px calc(50vw - 38px) 14px;
-    scroll-snap-type:x mandatory;scrollbar-width:none
-  }
-  .filters::-webkit-scrollbar{display:none}
-  .filter{
-    flex:0 0 76px;width:76px;height:76px;border-radius:50%;
-    border:3px solid rgba(255,255,255,.55);
-    background:rgba(255,255,255,.13);
-    display:grid;place-items:center;position:relative;
-    scroll-snap-align:center;transition:.18s
-  }
-  .filter.active{
-    transform:scale(1.13);border-color:#fff;
-    box-shadow:0 0 0 4px rgba(255,255,255,.16)
-  }
-  .filter span{font-size:33px}
-  .filter small{
-    position:absolute;left:0;right:0;bottom:4px;
-    text-align:center;font-size:8px;font-weight:900;
-    text-shadow:0 1px 4px #000
-  }
+.controls{height:94px;display:flex;align-items:center;justify-content:center;position:relative}
+.shutter{width:78px;height:78px;border-radius:50%;border:5px solid #fff;background:rgba(255,255,255,.13)}
+.shutter:after{content:"";display:block;width:59px;height:59px;border-radius:50%;background:#fff;margin:auto}
+.save{position:absolute;right:26px;width:47px;height:47px;border:0;border-radius:50%;background:rgba(0,0,0,.42);color:#fff;display:grid;place-items:center}
+.save:disabled{opacity:.35}
 
-  .controls{
-    height:94px;display:flex;align-items:center;justify-content:center;
-    position:relative;direction:ltr
-  }
-  .shutter{
-    width:78px;height:78px;border-radius:50%;border:5px solid #fff;
-    background:rgba(255,255,255,.13);padding:0
-  }
-  .shutter::after{
-    content:"";display:block;width:59px;height:59px;border-radius:50%;
-    background:#fff;margin:auto
-  }
-  .save{
-    position:absolute;right:26px;width:47px;height:47px;
-    border:0;border-radius:50%;background:rgba(0,0,0,.42);
-    color:#fff;display:grid;place-items:center
-  }
-  .save:disabled{opacity:.35}
+.overlay{position:absolute;z-index:100;inset:0;background:#000;display:flex;align-items:center;justify-content:center;padding:25px;text-align:center}
+.overlay.hidden{display:none}
+.loader{width:40px;height:40px;border:4px solid #333;border-top-color:#fff;border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.overlay p{color:#aaa;line-height:1.6;font-size:13px;margin:0}
 
-  .loading{
-    position:absolute;z-index:100;inset:0;background:#000;
-    display:flex;align-items:center;justify-content:center;
-    text-align:center;padding:25px
-  }
-  .loading.hidden{display:none}
-  .loader{
-    width:40px;height:40px;border-radius:50%;
-    border:4px solid #333;border-top-color:#fff;
-    margin:0 auto 14px;animation:spin .8s linear infinite
-  }
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .loading p{color:#aaa;font-size:13px;line-height:1.6;margin:0}
+.errorbox{max-width:430px;background:#111;border:1px solid #222;border-radius:24px;padding:24px}
+.errorbox h2{margin:0 0 10px}
+.errordetail{direction:ltr;text-align:left;background:#050505;border:1px solid #222;border-radius:12px;padding:10px;margin-top:12px;font-size:11px;word-break:break-word;color:#ff9f9f}
+.retry{margin-top:16px;border:0;border-radius:999px;background:#fff;color:#000;font-weight:900;padding:12px 22px}
 
-  .error{
-    position:absolute;z-index:120;inset:0;background:#080808;
-    display:none;align-items:center;justify-content:center;
-    padding:25px;text-align:center
-  }
-  .error.show{display:flex}
-  .errorbox{
-    max-width:400px;background:#111;border:1px solid #222;
-    border-radius:26px;padding:26px 22px
-  }
-  .errorbox h2{margin:0 0 9px;font-size:22px}
-  .errorbox p{margin:0;color:#aaa;font-size:13px;line-height:1.7}
-  .retry{
-    margin-top:18px;border:0;border-radius:999px;background:#fff;
-    color:#000;font-weight:900;padding:13px 24px
-  }
+.toast{position:absolute;z-index:80;top:75px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);padding:8px 14px;border-radius:999px;font-size:12px;opacity:0;transition:.2s}
+.toast.show{opacity:1}
 </style>
 </head>
-
 <body>
 <div id="app">
-
   <div id="deepar-div"></div>
 
   <div class="top">
-    <button id="flipBtn" class="iconbtn" aria-label="تبديل الكاميرا">
-      <svg class="icon" viewBox="0 0 24 24">
-        <path d="M20 7h-4l-2-2h-4L8 7H4v12h16z"/>
-        <path d="M16 11l2 2-2 2M8 15l-2-2 2-2"/>
-        <circle cx="12" cy="13" r="3"/>
-      </svg>
+    <button id="flipBtn" class="btn">
+      <svg viewBox="0 0 24 24"><path d="M20 7h-4l-2-2h-4L8 7H4v12h16z"/><path d="M16 11l2 2-2 2M8 15l-2-2 2-2"/><circle cx="12" cy="13" r="3"/></svg>
     </button>
-
-    <button id="clearBtn" class="iconbtn" aria-label="بدون فلتر">
-      <svg class="icon" viewBox="0 0 24 24">
-        <path d="M6 6l12 12M18 6L6 18"/>
-      </svg>
+    <button id="clearBtn" class="btn">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
   </div>
 
-  <div id="status" class="status"></div>
+  <div id="toast" class="toast"></div>
 
   <div class="bottom">
-
     <div class="filters" id="filters">
-
-      <button class="filter" data-effect="" data-name="بدون فلتر">
-        <span>✨</span><small>عادي</small>
-      </button>
-
-      <button
-        class="filter active"
-        data-effect="https://cdn.jsdelivr.net/npm/deepar/effects/dalmatian"
-        data-name="كلب">
-        <span>🐶</span><small>كلب</small>
-      </button>
-
-      <button
-        class="filter"
-        data-effect="https://cdn.jsdelivr.net/npm/deepar/effects/koala"
-        data-name="كوالا">
-        <span>🐨</span><small>كوالا</small>
-      </button>
-
-      <button
-        class="filter"
-        data-effect="https://cdn.jsdelivr.net/npm/deepar/effects/lion"
-        data-name="أسد">
-        <span>🦁</span><small>أسد</small>
-      </button>
-
-      <button
-        class="filter"
-        data-effect="https://cdn.jsdelivr.net/npm/deepar/effects/aviators"
-        data-name="نظارة">
-        <span>😎</span><small>نظارة</small>
-      </button>
-
+      <button class="filter active" data-effect="" data-name="عادي"><span>✨</span><small>عادي</small></button>
+      <button class="filter" data-effect="https://cdn.jsdelivr.net/npm/deepar@5.6.22/effects/aviators" data-name="Aviators"><span>😎</span><small>نظارة</small></button>
     </div>
 
     <div class="controls">
-      <button id="captureBtn" class="shutter" aria-label="تصوير"></button>
-
-      <button id="saveBtn" class="save" disabled aria-label="حفظ">
-        <svg class="icon" viewBox="0 0 24 24">
-          <path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>
-        </svg>
+      <button id="captureBtn" class="shutter"></button>
+      <button id="saveBtn" class="save" disabled>
+        <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
       </button>
     </div>
-
   </div>
 
-  <div id="loading" class="loading">
+  <div id="loading" class="overlay">
     <div>
       <div class="loader"></div>
-      <p id="loadingText">جاري تشغيل الكاميرا…</p>
+      <p id="loadingText">جاري تشغيل DeepAR والكاميرا…</p>
     </div>
   </div>
 
-  <div id="errorPanel" class="error">
+  <div id="errorPanel" class="overlay hidden">
     <div class="errorbox">
-      <h2>تعذر تشغيل الكاميرا</h2>
-      <p id="errorText"></p>
+      <h2>تعذر تشغيل DeepAR</h2>
+      <p>الرسالة الموجودة بالأسفل ستبين السبب الحقيقي.</p>
+      <div id="errorDetail" class="errordetail"></div>
       <button id="retryBtn" class="retry">إعادة المحاولة</button>
     </div>
   </div>
-
 </div>
 
 <script>
-
-/* =========================================================
-   الصق License Key الخاص بك هنا فقط
-   لا تعدل أي شيء آخر
-   ========================================================= */
-
-const DEEPAR_LICENSE_KEY = "e17ae1d5bb6471807b7e66c4b7f735c3e94a4146be0a6e4464d62bc13b4038718fdba6965ded10eb";
-
-/* ========================================================= */
-
-
-const DEFAULT_EFFECT =
-  "https://cdn.jsdelivr.net/npm/deepar/effects/dalmatian";
-
-const deeparContainer = document.getElementById("deepar-div");
-const loading = document.getElementById("loading");
-const loadingText = document.getElementById("loadingText");
-const statusEl = document.getElementById("status");
-const errorPanel = document.getElementById("errorPanel");
-const errorText = document.getElementById("errorText");
-const filters = document.getElementById("filters");
-const saveBtn = document.getElementById("saveBtn");
+const DEEPAR_LICENSE_KEY = 'e17ae1d5bb6471807b7e66c4b7f735c3e94a4146be0a6e4464d62bc13b4038718fdba6965ded10eb';
 
 let deepAR = null;
 let currentFacingMode = "user";
-let currentEffect = DEFAULT_EFFECT;
 let lastScreenshot = null;
 let starting = false;
 
+const loading = document.getElementById("loading");
+const loadingText = document.getElementById("loadingText");
+const errorPanel = document.getElementById("errorPanel");
+const errorDetail = document.getElementById("errorDetail");
+const toastEl = document.getElementById("toast");
+const filters = document.getElementById("filters");
+const saveBtn = document.getElementById("saveBtn");
 
-function toast(message) {
-  statusEl.textContent = message;
-  statusEl.classList.add("show");
-
+function toast(t) {
+  toastEl.textContent = t;
+  toastEl.classList.add("show");
   clearTimeout(toast.timer);
-
-  toast.timer = setTimeout(() => {
-    statusEl.classList.remove("show");
-  }, 1300);
+  toast.timer = setTimeout(()=>toastEl.classList.remove("show"),1200);
 }
 
-
-function showLoading(message) {
-  loadingText.textContent = message;
+function showLoading(t) {
+  loadingText.textContent = t;
   loading.classList.remove("hidden");
 }
-
 
 function hideLoading() {
   loading.classList.add("hidden");
 }
 
-
-function showError(message) {
+function showError(err) {
   hideLoading();
-  errorText.textContent = message;
-  errorPanel.classList.add("show");
+  let msg = err?.message || String(err);
+  errorDetail.textContent = msg;
+  errorPanel.classList.remove("hidden");
 }
-
-
-function hideError() {
-  errorPanel.classList.remove("show");
-}
-
-
-function validateLicenseKey() {
-  return (
-    DEEPAR_LICENSE_KEY &&
-    DEEPAR_LICENSE_KEY !== "PASTE_YOUR_LICENSE_KEY_HERE"
-  );
-}
-
 
 async function startDeepAR() {
-
-  if (starting) return;
-
+  if(starting) return;
   starting = true;
-
-  hideError();
-  showLoading("جاري تشغيل الكاميرا والفلاتر…");
+  errorPanel.classList.add("hidden");
+  showLoading("جاري تشغيل الكاميرا…");
 
   try {
-
-    if (!validateLicenseKey()) {
-      throw new Error(
-        "LICENSE_KEY_MISSING"
-      );
+    if(!DEEPAR_LICENSE_KEY || DEEPAR_LICENSE_KEY === "PASTE_YOUR_LICENSE_KEY_HERE") {
+      throw new Error("License key missing");
     }
 
-    if (deepAR) {
-      try {
-        await deepAR.shutdown();
-      } catch (e) {}
-
+    if(deepAR) {
+      try { await deepAR.shutdown(); } catch(e) {}
       deepAR = null;
     }
 
+    // مهم: نبدأ بدون أي effect حتى لا يمنع رابط فلتر خاطئ تشغيل الكاميرا.
     deepAR = await deepar.initialize({
       licenseKey: DEEPAR_LICENSE_KEY,
-
-      previewElement: deeparContainer,
-
-      effect: currentEffect,
-
+      previewElement: document.querySelector("#deepar-div"),
       additionalOptions: {
         cameraConfig: {
           facingMode: currentFacingMode
@@ -333,232 +161,85 @@ async function startDeepAR() {
     });
 
     hideLoading();
-
-    if (currentFacingMode === "user") {
-      toast("الكاميرا جاهزة ✓");
-    }
-
-  } catch (error) {
-
-    console.error(error);
-
-    if (error.message === "LICENSE_KEY_MISSING") {
-
-      showError(
-        "لم يتم وضع DeepAR License Key داخل الكود. افتح ملف HTML وابحث عن PASTE_YOUR_LICENSE_KEY_HERE ثم استبدله بالمفتاح."
-      );
-
-    } else {
-
-      showError(
-        "تعذر تشغيل DeepAR. تأكد من أن License Key صحيح، وأن دومين موقعك مضاف داخل مشروع DeepAR، وأن الموقع يعمل عبر HTTPS."
-      );
-
-    }
-
+    toast("الكاميرا جاهزة ✓");
+  } catch(err) {
+    console.error(err);
+    showError(err);
   } finally {
-
     starting = false;
-
   }
 }
 
+filters.querySelectorAll(".filter").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    if(!deepAR) return toast("الكاميرا غير جاهزة");
 
-filters.querySelectorAll(".filter").forEach((button) => {
-
-  button.addEventListener("click", async () => {
-
-    if (!deepAR) {
-      toast("الكاميرا غير جاهزة");
-      return;
-    }
-
-    const effect = button.dataset.effect;
-    const filterName = button.dataset.name;
-
-    filters.querySelectorAll(".filter").forEach((item) => {
-      item.classList.remove("active");
-    });
-
-    button.classList.add("active");
-
-    button.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest"
-    });
+    const effect = btn.dataset.effect;
+    const name = btn.dataset.name;
 
     try {
+      showLoading(effect ? "جاري تحميل الفلتر…" : "جاري إزالة الفلتر…");
 
-      showLoading("جاري تحميل فلتر " + filterName + "…");
-
-      if (effect) {
-
+      if(effect) {
         await deepAR.switchEffect(effect);
-
-        currentEffect = effect;
-
       } else {
-
         await deepAR.clearEffect();
-
-        currentEffect = "";
-
       }
 
-      hideLoading();
-
-      toast(filterName);
-
-    } catch (error) {
-
-      console.error(error);
+      filters.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));
+      btn.classList.add("active");
 
       hideLoading();
-
-      toast("تعذر تحميل الفلتر");
-
+      toast(name);
+    } catch(err) {
+      console.error(err);
+      showError(err);
     }
-
   });
-
 });
 
-
-document.getElementById("clearBtn").addEventListener("click", async () => {
-
-  if (!deepAR) return;
-
+document.getElementById("clearBtn").onclick = async () => {
+  if(!deepAR) return;
   try {
-
     await deepAR.clearEffect();
-
-    currentEffect = "";
-
-    filters.querySelectorAll(".filter").forEach((item) => {
-      item.classList.remove("active");
-    });
-
+    filters.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));
     filters.querySelector('[data-effect=""]').classList.add("active");
-
     toast("بدون فلتر");
-
-  } catch (error) {
-
-    console.error(error);
-
+  } catch(err) {
+    showError(err);
   }
+};
 
-});
+document.getElementById("flipBtn").onclick = async () => {
+  if(!deepAR || starting) return;
+  currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+  await startDeepAR();
+};
 
-
-document.getElementById("flipBtn").addEventListener("click", async () => {
-
-  if (!deepAR || starting) return;
-
-  currentFacingMode =
-    currentFacingMode === "user"
-      ? "environment"
-      : "user";
-
-  showLoading("جاري تبديل الكاميرا…");
-
+document.getElementById("captureBtn").onclick = async () => {
+  if(!deepAR) return toast("الكاميرا غير جاهزة");
   try {
-
-    await deepAR.shutdown();
-
-    deepAR = null;
-
-    await startDeepAR();
-
-  } catch (error) {
-
-    console.error(error);
-
-    showError(
-      "تعذر تبديل الكاميرا. حاول إعادة تحميل الصفحة."
-    );
-
-  }
-
-});
-
-
-document.getElementById("captureBtn").addEventListener("click", async () => {
-
-  if (!deepAR) {
-
-    toast("الكاميرا غير جاهزة");
-
-    return;
-  }
-
-  try {
-
     lastScreenshot = await deepAR.takeScreenshot();
-
     saveBtn.disabled = false;
-
     toast("تم التصوير ✓");
-
-  } catch (error) {
-
-    console.error(error);
-
-    toast("تعذر التقاط الصورة");
-
+  } catch(err) {
+    showError(err);
   }
+};
 
-});
+saveBtn.onclick = () => {
+  if(!lastScreenshot) return;
+  const a = document.createElement("a");
+  a.href = lastScreenshot;
+  a.download = "AR-SnapCam-" + Date.now() + ".png";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+};
 
+document.getElementById("retryBtn").onclick = startDeepAR;
 
-saveBtn.addEventListener("click", () => {
-
-  if (!lastScreenshot) return;
-
-  const link = document.createElement("a");
-
-  link.href = lastScreenshot;
-
-  link.download =
-    "AR-SnapCam-" + Date.now() + ".png";
-
-  document.body.appendChild(link);
-
-  link.click();
-
-  link.remove();
-
-  toast("تم حفظ الصورة");
-
-});
-
-
-document.getElementById("retryBtn").addEventListener("click", () => {
-
-  hideError();
-
-  startDeepAR();
-
-});
-
-
-window.addEventListener("load", () => {
-
-  /*
-    مباشرة عند فتح الموقع:
-    DeepAR سيطلب إذن الكاميرا من المتصفح.
-  */
-
-  setTimeout(() => {
-
-    startDeepAR();
-
-  }, 150);
-
-});
-
+window.addEventListener("load", () => setTimeout(startDeepAR, 100));
 </script>
-
 </body>
 </html>
